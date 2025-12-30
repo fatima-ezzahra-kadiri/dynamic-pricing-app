@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prédiction de Prix Dynamiques</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #8BA888 0%, #6B9A6C 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8BA888 0%, #6B9A6C 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .model-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .model-info-item {
+            text-align: center;
+            margin: 5px;
+        }
+
+        .model-info-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .model-info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #6B9A6C;
+        }
+
+        .hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #8BA888 0%, #6B9A6C 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(107, 154, 108, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #6B9A6C;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result h3 {
+            color: #6B9A6C;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .price-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #28a745;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6B9A6C;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .model-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Prediction de Prix Dynamiques</h1>
+            <p>Modele de regression par descente de gradient</p>
+            <div class="model-info" id="modelInfo">
+                <div class="model-info-item">
+                    <div class="model-info-label">Test R2</div>
+                    <div class="model-info-value" id="testR2">-</div>
+                </div>
+                <div class="model-info-item">
+                    <div class="model-info-label">Test MSE</div>
+                    <div class="model-info-value" id="testMSE">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <form id="predictionForm">
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label for="demand_index">Indice de Demande</label>
+                        <input type="number" step="0.01" id="demand_index" name="demand_index">
+                        <div class="hint">Intensite de la demande client</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="competition_pressure">Pression Concurrentielle</label>
+                        <input type="number" step="0.01" id="competition_pressure" name="competition_pressure">
+                        <div class="hint">Niveau de concurrence sur le marche</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operational_cost">Cout Operationnel</label>
+                        <input type="number" step="0.01" id="operational_cost" name="operational_cost">
+                        <div class="hint">Couts d'exploitation</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="form-group">
+                        <label for="seasonality_index">Indice de Saisonnalite</label>
+                        <input type="number" step="0.01" id="seasonality_index" name="seasonality_index">
+                        <div class="hint">Impact de la saison</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marketing_intensity">Intensite Marketing</label>
+                        <input type="number" step="0.01" id="marketing_intensity" name="marketing_intensity">
+                        <div class="hint">Niveau d'effort marketing</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="time_slot">Creneau Horaire</label>
+                        <select id="time_slot" name="time_slot">
+                            <option value="">Selectionner...</option>
+                            <option value="0">00:00 - 01:00</option>
+                            <option value="1">01:00 - 02:00</option>
+                            <option value="2">02:00 - 03:00</option>
+                            <option value="3">03:00 - 04:00</option>
+                            <option value="4">04:00 - 05:00</option>
+                            <option value="5">05:00 - 06:00</option>
+                            <option value="6">06:00 - 07:00</option>
+                            <option value="7">07:00 - 08:00</option>
+                            <option value="8">08:00 - 09:00</option>
+                            <option value="9">09:00 - 10:00</option>
+                            <option value="10">10:00 - 11:00</option>
+                            <option value="11">11:00 - 12:00</option>
+                            <option value="12">12:00 - 13:00</option>
+                            <option value="13">13:00 - 14:00</option>
+                            <option value="14">14:00 - 15:00</option>
+                            <option value="15">15:00 - 16:00</option>
+                            <option value="16">16:00 - 17:00</option>
+                            <option value="17">17:00 - 18:00</option>
+                            <option value="18">18:00 - 19:00</option>
+                            <option value="19">19:00 - 20:00</option>
+                            <option value="20">20:00 - 21:00</option>
+                            <option value="21">21:00 - 22:00</option>
+                            <option value="22">22:00 - 23:00</option>
+                            <option value="23">23:00 - 00:00</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="day_of_week">Jour de la Semaine</label>
+                        <select id="day_of_week" name="day_of_week">
+                            <option value="">Selectionner...</option>
+                            <option value="0">Lundi</option>
+                            <option value="1">Mardi</option>
+                            <option value="2">Mercredi</option>
+                            <option value="3">Jeudi</option>
+                            <option value="4">Vendredi</option>
+                            <option value="5">Samedi</option>
+                            <option value="6">Dimanche</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Predire le Prix</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Calcul en cours...</p>
+            </div>
+
+            <div class="result" id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Charger les informations du modele au demarrage
+        async function loadModelInfo() {
+            try {
+                const response = await fetch('/api/model-info');
+                const data = await response.json();
+                
+                document.getElementById('testR2').textContent = data.test_r2.toFixed(4);
+                document.getElementById('testMSE').textContent = data.test_mse.toFixed(2);
+            } catch (error) {
+                console.error('Erreur lors du chargement des infos:', error);
+            }
+        }
+
+        // Gerer la soumission du formulaire
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {};
+            formData.forEach((value, key) => {
+                // Si la valeur est vide, utiliser 0 comme valeur par defaut
+                data[key] = value === '' ? 0 : parseFloat(value);
+            });
+
+            // Afficher le loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').classList.remove('show');
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                document.getElementById('loading').classList.remove('show');
+                
+                if (response.ok) {
+                    // Succes
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.className = 'result show';
+                    resultDiv.innerHTML = `
+                        <div class="price-display">${result.predicted_price.toFixed(2)} MAD</div>
+                    `;
+                } else {
+                    // Erreur
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.className = 'result show error';
+                    resultDiv.innerHTML = `
+                        <h3>Erreur</h3>
+                        <p>${result.error || 'Une erreur est survenue'}</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = 'result show error';
+                resultDiv.innerHTML = `
+                    <h3>Erreur de connexion</h3>
+                    <p>Impossible de se connecter au serveur: ${error.message}</p>
+                `;
+            }
+        });
+
+        // Charger les infos au demarrage
+        loadModelInfo();
+    </script>
+</body>
+</html>
