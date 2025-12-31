@@ -50,5 +50,6 @@ through a REST API to retrieve real-time price predictions.
 
 ---
 
-## Visualization & Interface Report
+## Visualization Report
 👉 [Rapport_de_visualisation_et_interface.pdf](Rapport_de_visualisation_et_interface.pdf)
+
