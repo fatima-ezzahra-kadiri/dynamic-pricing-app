@@ -42,8 +42,9 @@ The application is deployed on **Render** and publicly accessible.
 
 ##  Project Overview
 
-![Frontend Interface](images/frontend.png)
+![Frontend Interface](image/frontend.png)
 
 This project implements a **dynamic pricing regression model from scratch using Gradient Descent**.  
 The frontend serves as the user-facing layer, enabling interaction with the pricing model
 through a REST API to retrieve real-time price predictions.
+
