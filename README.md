@@ -48,3 +48,7 @@ This project implements a **dynamic pricing regression model from scratch using 
 The frontend serves as the user-facing layer, enabling interaction with the pricing model
 through a REST API to retrieve real-time price predictions.
 
+---
+
+## Visualization & Interface Report
+👉 [Rapport_de_visualisation_et_interface.pdf](Rapport_de_visualisation_et_interface.pdf)
